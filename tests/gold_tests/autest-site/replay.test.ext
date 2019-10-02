@@ -1,0 +1,77 @@
+'''
+'''
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+import os
+import time
+import sys
+
+import trlib.ipconstants as IPConstants
+
+from ports import get_port
+
+def MakeReplayServer(obj, name, replay_file, ip ='127.0.0.1', port = False , options = {}):
+    #server_dir = '/home/corwin/git/http-replay/_install/debug_posix-x86_64_default/bin/replay-server'
+    server_dir = '/opt/ats/bin/replay-server'
+
+    p = obj.Processes.Process(name)
+    if (port == False):
+        get_port(p, "port")
+        get_port(p, "ssl_port")
+    else:
+        p.Variables.port = port
+        p.Variables.ssl_port = 4443
+    
+    command = '{0} run {1} --listen {2}:{3} --listen-https {2}:{4} --verbose'.format(server_dir, replay_file, ip, p.Variables.port, p.Variables.ssl_port)
+    #command += options
+    p.Command = command
+
+    data_dir = os.path.join(obj.RunDirectory,name)
+    p.Setup.MakeDir(data_dir)
+    p.Variables.DataDir = data_dir
+    p.returnCode = 0
+
+    if IPConstants.isIPv6(ip):
+        p.Ready = When.PortOpenv6(p.Variables.port)
+    else:
+        p.Ready = When.PortOpenv4(p.Variables.port)
+
+    return p
+
+def ReplaySetUp(obj, replay_file, ip = '127.0.0.1'):
+    server_dir = '/home/corwin/git/http-replay/_install/debug_posix-x86_64_default/bin/replay-server'
+    replay_client_dir = '/home/corwin/git/http-replay/_install/debug_posix-x86_64_default/bin/replay-client'
+
+    # MicroDNS Setup
+    dns = obj.MakeDNServer("dns", default=['127.0.0.1'])
+
+    # ATS Setup
+    ts = obj.MakeATSProcess("ts", command = "traffic_server", select_ports=False)
+
+    # Temp
+    ts.Variables.ssl_port = 4443
+
+    # Replay Server Setup
+    replay_server = obj.MakeReplayServer('r_server', replay_file)
+
+    #Replay Client Setup
+    client_command = '{0} run {1} {2}:{3} {2}:{4}'.format(replay_client_dir, replay_file, ip, ts.Variables.port, '4443')
+    
+    return (ts, dns, replay_server, client_command)
+
+ExtendTest(MakeReplayServer, name="MakeReplayServer")
+ExtendTest(ReplaySetUp, name="ReplaySetUp")

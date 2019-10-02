@@ -92,7 +92,9 @@ def MakeDNServer(obj, name, filename="dns_file.json", port=False, ip='INADDR_LOO
     # create Process
     p = obj.Processes.Process(name)
     if (port == False):
-        port = get_port(p, "Port")
+        port = get_port(p, "port")
+    else:
+        p.Variables.port = port
     command = "microdns {0} {1} {2}".format(ip, port, filepath)
 
     if rr:

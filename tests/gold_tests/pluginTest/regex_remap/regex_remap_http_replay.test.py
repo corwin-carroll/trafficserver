@@ -17,14 +17,18 @@
 #  limitations under the License.
 
 import os
+import sys
 import time
 
-replay_file_dir = './replay/yts-2819.replay.json'
+#replay_file_dir = 'pluginregex_remap/replay/yts-2819.replay.json'
+replay_file_dir = '/home/corwin/git/trafficserver/tests/gold_tests/pluginTest/regex_remap/replay/yts-2819.replay.json'
 hostIP = '127.0.0.1'
 
 data_dir = os.path.join(Test.RunDirectory, 'regex_remap_replay')
 
-ts,dns,replay_server, client_command = Test.ReplaySetUp(data_dir)
+sys.stdout.write(Test.Variables["AtsTestToolsDir"])
+
+ts,dns,replay_server, client_command = Test.ReplaySetUp(replay_file_dir)
 
 # Configuration
 regex_remap_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_remap.conf')

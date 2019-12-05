@@ -81,7 +81,32 @@ if ENV['ATS_BIN'] is not None:
 Variables.AtsExampleDir = os.path.join(AutestSitePath, '../../../example')
 Variables.AtsTestToolsDir = os.path.join(AutestSitePath, '../../tools')
 
+if Arguments.replay_bin is not None:
+    # Add environment variables
+    ENV['REPLAY_BIN'] = Arguments.replay_bin
+
+if 'REPLAY_BIN' in ENV and ENV['REPLAY_BIN'] is not None:
+    # Add variables for Tests
+    replay_server = os.path.join(ENV['REPLAY_BIN'], "replay-server")
+    replay_client = os.path.join(ENV['REPLAY_BIN'], "replay-client")
+    if not os.path.isdir(ENV['REPLAY_BIN']):
+        host.WriteError("--replay-bin requires a directory", show_stack=False)
+    if not os.path.isfile(replay_server):
+        hint = ''
+        host.WriteError("replay-server is not found. Aborting tests - Bad build or install.{}".format(hint), show_stack=False)
+    if not os.path.isfile(replay_client):
+        hint = ''
+        host.WriteError("replay-client is not found. Aborting tests - Bad build or install.{}".format(hint), show_stack=False)
+else:
+    ENV['REPLAY_BIN'] = ''
+
+Variables.ReplayServer = os.path.join(ENV['REPLAY_BIN'], "replay-server")
+Variables.ReplayClient = os.path.join(ENV['REPLAY_BIN'], "replay-client")
+
+
 # modify delay times as we always have to kill Trafficserver
 # no need to wait
 Variables.Autest.StopProcessLongDelaySeconds = 0
 Variables.Autest.KillDelaySecond = 30
+
+
